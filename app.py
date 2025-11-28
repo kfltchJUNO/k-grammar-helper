@@ -3,10 +3,15 @@ import google.generativeai as genai
 import os
 
 # 1. 페이지 설정
-st.set_page_config(page_title="수업 도우미 (진단모드)", page_icon="🔧")
-st.title("🔧 모델 연결 진단 및 수업 도우미")
+st.set_page_config(page_title="우리 반 수업 도우미", page_icon="🏫")
+st.title("🏫 우리 반 한국어 수업 도우미")
 
-# 2. API 키 설정
+# =========================================================
+# 👇 [설정 1] GitHub에 올린 교재 파일 이름 (정확히 일치해야 함!)
+PDF_FILE_NAME = "textbook.pdf" 
+# =========================================================
+
+# 2. API 키 설정 (Secrets에서 가져옴)
 if "GOOGLE_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -17,85 +22,66 @@ else:
     st.error("🚨 API 키가 없습니다. Streamlit 설정을 확인해주세요.")
     st.stop()
 
-# ==========================================
-# 🔍 [진단 구간] 사용 가능한 모델 목록 출력
-# ==========================================
-st.markdown("### 1. Google 서버 연결 테스트")
-try:
-    st.write("사용 가능한 모델을 조회합니다...")
-    available_models = []
-    
-    # 구글 서버에 "나한테 허용된 모델 다 보여줘" 요청
-    for m in genai.list_models():
-        # '대화(generateContent)'가 가능한 모델만 추리기
-        if 'generateContent' in m.supported_generation_methods:
-            available_models.append(m.name)
-            
-    if available_models:
-        st.success(f"✅ 연결 성공! 감지된 모델 {len(available_models)}개")
-        st.json(available_models) # 화면에 목록을 예쁘게 보여줌
-    else:
-        st.warning("⚠️ 연결은 됐는데, 사용 가능한 모델이 하나도 없습니다. (API 키 권한 문제일 수 있음)")
-
-except Exception as e:
-    st.error(f"❌ 모델 목록 조회 실패 (원인): {e}")
-    st.info("💡 팁: requirements.txt 버전을 확인하거나 API 키를 점검하세요.")
-
-st.markdown("---")
-
-# ==========================================
-# 🏫 [본 기능] 수업 도우미 앱 로직
-# ==========================================
-st.markdown("### 2. 교재 분석 앱 실행")
-
-# 👇 [중요] 깃허브에 올린 파일명과 똑같아야 함!
-PDF_FILE_NAME = "단국한국어 1가_압축.pdf" 
-
+# 3. 모델 및 파일 로딩 (캐싱 적용)
 @st.cache_resource
 def load_ai_model():
     if not os.path.exists(PDF_FILE_NAME):
-        return None, None, f"파일 없음: {PDF_FILE_NAME}"
+        return None, None, f"파일을 찾을 수 없습니다: {PDF_FILE_NAME}"
     
     try:
-        # A. 파일 업로드
+        # 파일 업로드
         uploaded_file = genai.upload_file(path=PDF_FILE_NAME, mime_type="application/pdf")
         
-        # B. 모델 설정 (위 진단 목록에 있는 이름 중 하나를 써야 함)
-        # 일단 가장 기본형으로 시도
-        target_model = 'gemini-1.5-flash' 
-        
-        # 만약 목록에 'models/'가 붙어있으면 붙여줘야 함
-        # 안전하게 'models/gemini-1.5-flash'로 시도해봅니다.
+        # =========================================================
+        # 👇 [설정 2] 사용할 AI 모델 이름 (아까 확인한 무료/고성능 모델)
+        # 2.0-flash가 가장 빠르고 성능이 좋습니다.
         model = genai.GenerativeModel('models/gemini-2.0-flash')
+        # =========================================================
         
         return model, uploaded_file, "성공"
         
     except Exception as e:
         return None, None, str(e)
 
-# 실행 버튼
-if st.button("앱 실행 시도하기 (모델 로딩)"):
-    with st.spinner("모델을 불러오는 중..."):
-        model, sample_file, msg = load_ai_model()
-        
-        if model:
-            st.success("🎉 모델 로딩 성공! 질문을 입력하세요.")
-            st.session_state['model_loaded'] = True
-            st.session_state['model'] = model
-            st.session_state['file'] = sample_file
-        else:
-            st.error(f"❌ 모델 로딩 실패: {msg}")
+# 4. 로딩 실행 (화면 표시)
+with st.spinner("AI 선생님이 교재를 읽고 있습니다..."):
+    model, sample_file, msg = load_ai_model()
 
-# 모델이 로드되었을 때만 질문창 표시
-if st.session_state.get('model_loaded'):
-    user_question = st.text_area("질문 입력", placeholder="예: 문법 설명해줘")
-    if st.button("질문하기"):
-        if user_question:
+if model is None:
+    st.error(f"❌ 오류 발생: {msg}")
+    st.stop()
+
+# 5. 질문 입력 화면
+st.success("✅ 준비 완료! 교재 내용에 대해 물어보세요.")
+
+user_question = st.text_area("질문 입력", height=100, placeholder="예: 7과의 문법으로 사지선다 문제를 5개 만들어줘.")
+
+if st.button("질문하기", type="primary"):
+    if not user_question:
+        st.warning("질문 내용을 입력해주세요.")
+    else:
+        with st.spinner("답변을 작성 중입니다..."):
             try:
-                model = st.session_state['model']
-                file = st.session_state['file']
-                response = model.generate_content([user_question, file])
-                st.markdown(response.text)
-            except Exception as e:
-                st.error(f"답변 생성 오류: {e}")
+                # =========================================================
+                # ⭐⭐⭐ [설정 3] AI 성격 및 답변 지침 설정 (가장 중요!) ⭐⭐⭐
+                # 이 아래 따옴표 안의 문장들을 수정하면 AI의 말투가 바뀝니다.
+                # =========================================================
+                system_instruction = [
+                    "당신은 선생님들에게 수업 준비를 도와주는 상담가입니다.",
+                    "선생님들이 문법이나 단어에 대해서 질문하거나 문제를 요구할 것입니다.",
+                    "답변할 때는 다음 원칙을 반드시 지키세요:",
+                    "1. 무조건 제공된 교재 파일(PDF)에 있는 예문을 최우선으로 인용하세요.",
+                    "2. 교재에 없는 내용을 설명할 때는 '교재에는 없지만...'이라고 언급하세요.",
+                    "3. 문법을 비교할 때는 표(Table) 형식을 사용하여 시각적으로 명확하게 보여주세요.",
+                    "4. 말투는 '해요체'를 사용하고, 매우 친절하고 격려하는 태도를 보이세요.",
+                    f"학생의 질문: {user_question}", # 👈 학생 질문이 들어가는 곳 (수정 X)
+                    sample_file # 👈 교재 파일이 들어가는 곳 (수정 X)
+                ]
+                # =========================================================
 
+                # 답변 생성
+                response = model.generate_content(system_instruction)
+                st.markdown(response.text)
+                
+            except Exception as e:
+                st.error(f"답변 생성 중 오류가 발생했습니다: {e}")
