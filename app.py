@@ -29,7 +29,7 @@ if uploaded_file is not None:
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
 
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            genai.GenerativeModel('models/gemini-1.5-flash')
             sample_file = genai.upload_file(path=tmp_file_path, mime_type="application/pdf")
             st.success("분석 완료! 질문하세요.")
         except Exception as e:
@@ -50,4 +50,5 @@ if uploaded_file is not None:
                 st.markdown(response.text)
 
 elif uploaded_file is None:
+
     st.info("👈 왼쪽에서 교재 PDF를 먼저 업로드해주세요.")
