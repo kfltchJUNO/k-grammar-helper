@@ -35,7 +35,7 @@ def load_ai_model():
         # =========================================================
         # 👇 [설정 2] 사용할 AI 모델 이름 (아까 확인한 무료/고성능 모델)
         # 2.0-flash가 가장 빠르고 성능이 좋습니다.
-        model = genai.GenerativeModel('models/gemini-2.0-flash')
+        model = genai.GenerativeModel('models/gemini-flash-latest')
         # =========================================================
         
         return model, uploaded_file, "성공"
@@ -85,4 +85,5 @@ if st.button("질문하기", type="primary"):
                 
             except Exception as e:
                 st.error(f"답변 생성 중 오류가 발생했습니다: {e}")
+
 
