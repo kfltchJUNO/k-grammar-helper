@@ -35,7 +35,7 @@ def load_ai_model():
         uploaded_file = genai.upload_file(path=PDF_FILE_NAME, mime_type="application/pdf")
         
         # C. 모델 불러오기 (models/ 접두사 포함)
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash-001')
         return model, uploaded_file, "성공"
         
     except Exception as e:
@@ -78,5 +78,6 @@ if st.button("질문하기", type="primary"):
                 
             except Exception as e:
                 st.error(f"답변 생성 중 오류가 발생했습니다: {e}")
+
 
 
