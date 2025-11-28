@@ -9,7 +9,7 @@ st.title("🏫 우리 반 한국어 수업 도우미")
 # ==========================================
 # 👇 [중요] GitHub에 올린 PDF 파일 이름과 똑같이 적어주세요!
 # (대소문자까지 정확해야 합니다. 예: textbook.pdf)
-PDF_FILE_NAME = "단국한국어 1가.pdf" 
+PDF_FILE_NAME = "단국한국어 1가_압축.pdf" 
 # ==========================================
 
 # 2. API 키 확인 (Secrets에서 가져오기)
@@ -78,4 +78,5 @@ if st.button("질문하기", type="primary"):
                 
             except Exception as e:
                 st.error(f"답변 생성 중 오류가 발생했습니다: {e}")
+
 
