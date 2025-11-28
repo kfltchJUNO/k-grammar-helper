@@ -66,7 +66,7 @@ def load_ai_model():
         
         # 만약 목록에 'models/'가 붙어있으면 붙여줘야 함
         # 안전하게 'models/gemini-1.5-flash'로 시도해봅니다.
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-2.0-flash')
         
         return model, uploaded_file, "성공"
         
@@ -98,3 +98,4 @@ if st.session_state.get('model_loaded'):
                 st.markdown(response.text)
             except Exception as e:
                 st.error(f"답변 생성 오류: {e}")
+
